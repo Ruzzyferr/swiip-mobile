@@ -25,6 +25,7 @@ import {
 } from "@/src/services/purchases";
 import { api } from "@/src/services/api";
 import { useRouter } from "expo-router";
+import { StatusModal } from "@/src/components/StatusModal";
 
 export default function PremiumScreen() {
   const { premiumEnabled, refreshPremiumStatus } = usePremium();
@@ -35,6 +36,37 @@ export default function PremiumScreen() {
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<PurchasesPackage | null>(null);
 
+  // Status Modal State
+  const [statusVisible, setStatusVisible] = useState(false);
+  const [statusType, setStatusType] = useState<"success" | "error" | "info">("info");
+  const [statusTitle, setStatusTitle] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [statusButtonText, setStatusButtonText] = useState("Tamam");
+  const [statusAction, setStatusAction] = useState<(() => void) | undefined>(undefined);
+
+  const showStatus = (
+    type: "success" | "error" | "info",
+    title: string,
+    message: string,
+    buttonText = "Tamam",
+    action?: () => void
+  ) => {
+    setStatusType(type);
+    setStatusTitle(title);
+    setStatusMessage(message);
+    setStatusButtonText(buttonText);
+    setStatusAction(() => action);
+    setStatusVisible(true);
+  };
+
+  const handleStatusClose = () => {
+    setStatusVisible(false);
+    if (statusAction) {
+      statusAction();
+      setStatusAction(undefined);
+    }
+  };
+
   useEffect(() => {
     loadOfferings();
   }, []);
@@ -42,7 +74,7 @@ export default function PremiumScreen() {
   const loadOfferings = async () => {
     try {
       setLoading(true);
-      
+
       // Get user ID for RevenueCat initialization
       let userId: string | undefined;
       try {
@@ -52,26 +84,32 @@ export default function PremiumScreen() {
         console.error("Failed to get user info for RevenueCat:", error);
         // Continue anyway, getOfferings will try to initialize
       }
-      
+
       const currentOffering = await getOfferings(userId);
       setOffering(currentOffering);
 
-      // Auto-select monthly package if available
+      // Auto-select WEEKLY package if available, otherwise MONTHLY
       if (currentOffering) {
+        const weeklyPackage = currentOffering.availablePackages.find(
+          (pkg) => pkg.packageType === "WEEKLY"
+        );
         const monthlyPackage = currentOffering.availablePackages.find(
           (pkg) => pkg.packageType === "MONTHLY"
         );
-        if (monthlyPackage) {
+
+        if (weeklyPackage) {
+          setSelectedPackage(weeklyPackage);
+        } else if (monthlyPackage) {
           setSelectedPackage(monthlyPackage);
-        } else if (currentOffering.availablePackages.length > 0) {
-          setSelectedPackage(currentOffering.availablePackages[0]);
         }
+        // Do not auto-select other types since we filter them out in UI
       }
     } catch (error) {
       console.error("Failed to load offerings:", error);
-      Alert.alert(
-        "Error",
-        "Failed to load premium packages. Please try again later."
+      showStatus(
+        "error",
+        "Hata",
+        "Paketler yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin."
       );
     } finally {
       setLoading(false);
@@ -79,15 +117,16 @@ export default function PremiumScreen() {
   };
 
   const handlePurchase = async (pkg?: PurchasesPackage) => {
+    // ... (existing handlePurchase code)
     const packageToPurchase = pkg || selectedPackage;
     if (!packageToPurchase) {
-      Alert.alert("Error", "Please select a package");
+      showStatus("info", "Uyarı", "Lütfen bir paket seçin");
       return;
     }
 
     try {
       setPurchasing(true);
-      
+
       // Get user ID for RevenueCat initialization
       let userId: string | undefined;
       try {
@@ -96,46 +135,52 @@ export default function PremiumScreen() {
       } catch (error) {
         console.error("Failed to get user info for RevenueCat:", error);
       }
-      
+
       const customerInfo = await purchasePremium(packageToPurchase, userId);
-      
+
       // Check if purchase was successful
       const isPremium = customerInfo.entitlements.active["premium"] !== undefined;
-      
+
       if (isPremium) {
         // Server will be updated via webhook automatically
         // Just refresh status from server (may take a moment for webhook to process)
         await refreshPremiumStatus();
-        
-        Alert.alert("Success", "Welcome to Premium! 🎉", [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ]);
+
+        showStatus(
+          "success",
+          "Başarılı",
+          "Premium'a Hoş Geldin! 🎉",
+          "Tamam",
+          () => router.back()
+        );
       } else {
-        Alert.alert("Error", "Purchase completed but premium not activated. Please contact support.");
+        showStatus(
+          "error",
+          "Hata",
+          "Satın alma tamamlandı ancak premium aktif edilemedi."
+        );
       }
     } catch (error: any) {
       if (error.message === "Purchase cancelled") {
-        // User cancelled, no need to show error
         return;
       }
       console.error("Purchase failed:", error);
-      Alert.alert(
-        "Purchase Failed",
-        error.message || "Failed to complete purchase. Please try again."
+      showStatus(
+        "error",
+        "Satın Alma Başarısız",
+        error.message || "Satın alma işlemi başarısız oldu."
       );
     } finally {
       setPurchasing(false);
     }
   };
 
+  // ... (handleRestore code logic remains similar but localized) ...
+
   const handleRestore = async () => {
     try {
       setRestoring(true);
-      
-      // Get user ID for RevenueCat initialization
+      // ... (get user id logic) ...
       let userId: string | undefined;
       try {
         const me = await api.getMe();
@@ -143,28 +188,29 @@ export default function PremiumScreen() {
       } catch (error) {
         console.error("Failed to get user info for RevenueCat:", error);
       }
-      
+
       const customerInfo = await restorePurchases(userId);
-      
       const isPremium = customerInfo.entitlements.active["premium"] !== undefined;
-      
+
       if (isPremium) {
-        // Server will be updated via webhook automatically
-        // Just refresh status from server (may take a moment for webhook to process)
         await refreshPremiumStatus();
-        
-        Alert.alert("Success", "Purchases restored! 🎉", [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ]);
+        showStatus(
+          "success",
+          "Başarılı",
+          "Satın alımlar geri yüklendi! 🎉",
+          "Tamam",
+          () => router.back()
+        );
       } else {
-        Alert.alert("Info", "No previous purchases found to restore.");
+        showStatus(
+          "info",
+          "Bilgi",
+          "Geri yüklenecek satın alım bulunamadı."
+        );
       }
     } catch (error) {
       console.error("Restore failed:", error);
-      Alert.alert("Error", "Failed to restore purchases. Please try again.");
+      showStatus("error", "Hata", "Geri yükleme başarısız oldu.");
     } finally {
       setRestoring(false);
     }
@@ -176,12 +222,14 @@ export default function PremiumScreen() {
 
   const getPackageLabel = (packageToFormat: PurchasesPackage): string => {
     switch (packageToFormat.packageType) {
-      case "MONTHLY":
-        return "Pro";
-      case "ANNUAL":
-        return "Pro Annual";
       case "WEEKLY":
-        return "Pro Weekly";
+        return "Haftalık";
+      case "MONTHLY":
+        return "Aylık";
+      case "ANNUAL":
+        return "Yıllık";
+      case "LIFETIME":
+        return "Ömür Boyu";
       default:
         return "Pro";
     }
@@ -274,6 +322,14 @@ export default function PremiumScreen() {
             </View>
           </Card>
         </ScrollView>
+        <StatusModal
+          visible={statusVisible}
+          type={statusType}
+          title={statusTitle}
+          message={statusMessage}
+          buttonText={statusButtonText}
+          onClose={handleStatusClose}
+        />
       </SafeAreaView>
     );
   }
@@ -351,26 +407,37 @@ export default function PremiumScreen() {
               contentContainerStyle={styles.cardsContainer}
               style={styles.cardsScrollView}
             >
-              {offering.availablePackages.map((pkg: PurchasesPackage) => {
-                const { price, time } = extractPriceAndTime(formatPrice(pkg));
-                return (
-                  <PremiumCard
-                    key={pkg.identifier}
-                    title={getPackageLabel(pkg)}
-                    price={price}
-                    priceTime={time}
-                    subtitle={getPackageSubtitle(pkg)}
-                    features={getPackageFeatures()}
-                    buttonText={purchasing ? "Processing..." : "Get pro now"}
-                    onPress={() => {
-                      setSelectedPackage(pkg);
-                      handlePurchase(pkg);
-                    }}
-                    isSelected={selectedPackage?.identifier === pkg.identifier}
-                    style={styles.premiumCard}
-                  />
-                );
-              })}
+              {offering.availablePackages
+                .filter(
+                  (pkg) =>
+                    pkg.packageType === "WEEKLY" || pkg.packageType === "MONTHLY"
+                )
+                .sort((a, b) => {
+                  // Weekly first, then Monthly
+                  if (a.packageType === "WEEKLY") return -1;
+                  if (b.packageType === "WEEKLY") return 1;
+                  return 0;
+                })
+                .map((pkg: PurchasesPackage) => {
+                  const { price, time } = extractPriceAndTime(formatPrice(pkg));
+                  return (
+                    <PremiumCard
+                      key={pkg.identifier}
+                      title={getPackageLabel(pkg)}
+                      price={price}
+                      priceTime={time}
+                      subtitle={getPackageSubtitle(pkg)}
+                      features={getPackageFeatures()}
+                      buttonText={purchasing ? "Processing..." : "Get pro now"}
+                      onPress={() => {
+                        setSelectedPackage(pkg);
+                        handlePurchase(pkg);
+                      }}
+                      isSelected={selectedPackage?.identifier === pkg.identifier}
+                      style={styles.premiumCard}
+                    />
+                  );
+                })}
             </ScrollView>
 
             <TouchableOpacity
@@ -393,6 +460,14 @@ export default function PremiumScreen() {
           </Card>
         )}
       </ScrollView>
+      <StatusModal
+        visible={statusVisible}
+        type={statusType}
+        title={statusTitle}
+        message={statusMessage}
+        buttonText={statusButtonText}
+        onClose={handleStatusClose}
+      />
     </SafeAreaView>
   );
 }

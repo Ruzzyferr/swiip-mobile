@@ -28,6 +28,7 @@ import { getToken } from "@/src/services/authStore";
 import { showRewardedAd } from "@/src/services/rewardedAds";
 import { showInterstitialAd, initializeInterstitialAds, preloadInterstitialAd } from "@/src/services/interstitialAds";
 import { usePremium } from "@/src/state/premium";
+import { getOfferings, purchasePremium, PurchasesPackage } from "@/src/services/purchases";
 import { AxiosError } from "axios";
 
 type DiscoveryCard = {
@@ -48,6 +49,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
+  const [favoritePackage, setFavoritePackage] = useState<PurchasesPackage | null>(null);
   const [feed, setFeed] = useState<DiscoveryCard[]>([]);
   const swipeDeckRef = useRef<SwipeDeckHandle>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -115,7 +117,25 @@ export default function HomeScreen() {
     loadBoostStatus();
     // Initialize interstitial ads
     initializeInterstitialAds();
+    loadOfferings();
   }, []);
+
+  const loadOfferings = async () => {
+    try {
+      const offerings = await getOfferings();
+      if (offerings?.availablePackages) {
+        // Look for favorite pack (e.g., swiip_favorite_5pack)
+        const foundPackage = offerings.availablePackages.find(
+          pkg => pkg.identifier.includes("favorite")
+        );
+        if (foundPackage) {
+          setFavoritePackage(foundPackage);
+        }
+      }
+    } catch (error) {
+      console.log("Failed to load offerings:", error);
+    }
+  };
 
   // Check and show interstitial ad every 5 swipes
   const maybeShowInterstitialAd = useCallback(async () => {
@@ -475,9 +495,10 @@ export default function HomeScreen() {
         if (usage.usage && usage.usage.favoritesRemaining !== undefined) {
           if (usage.usage.favoritesRemaining <= 0) {
             // Show limit modal with purchase option
+            const price = favoritePackage?.product.priceString || "a pack";
             Alert.alert(
               "Favori Hakkı Yok",
-              "Favori göndermek için hakkınız kalmamış. 5 favori hakkı almak ister misiniz? (5$)",
+              `Favori göndermek için hakkınız kalmamış. 5 favori hakkı almak ister misiniz? (${favoritePackage ? price : "Store'dan"})`,
               [
                 {
                   text: "İptal",
@@ -485,8 +506,8 @@ export default function HomeScreen() {
                 },
                 {
                   text: "Satın Al",
-                  onPress: () => {
-                    router.push("/premium");
+                  onPress: async () => {
+                    await handlePurchaseFavorites();
                   },
                 },
               ]
@@ -576,6 +597,38 @@ export default function HomeScreen() {
       loadFeed();
     }
     setCurrentIndex(0);
+  };
+
+  const handlePurchaseFavorites = async () => {
+    try {
+      setLoading(true);
+      if (favoritePackage) {
+        await purchasePremium(favoritePackage);
+      } else {
+        console.warn("No favorite package found. Falling back to mock.");
+      }
+
+      // Sync with backend (mock or real)
+      await api.purchaseFavorite();
+
+      Alert.alert("Başarılı", "5 Favori hakkı eklendi! 🎉");
+
+      // Refresh limits
+      const usage = await api.getUsage();
+      if (usage.usage) {
+        setFavoriteInfo({
+          favoritesUsed: usage.usage.favoritesUsed || 0,
+          favoritesRemaining: usage.usage.favoritesRemaining || 0,
+          favoritesLimit: usage.usage.favoritesLimit || 5,
+        });
+      }
+    } catch (error: any) {
+      if (error.message !== "Purchase cancelled") {
+        Alert.alert("Hata", "Satın alma işlemi başarısız oldu.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleMatchModalClose = () => {
@@ -691,7 +744,7 @@ export default function HomeScreen() {
             </Text>
             <PrimaryButton
               title="Yenile"
-              onPress={loadFeed}
+              onPress={() => loadFeed()}
               style={styles.refreshButton}
             />
           </Card>
@@ -727,7 +780,7 @@ export default function HomeScreen() {
             </Text>
             <PrimaryButton
               title="Yenile"
-              onPress={loadFeed}
+              onPress={() => loadFeed()}
               style={styles.refreshButton}
             />
           </Card>

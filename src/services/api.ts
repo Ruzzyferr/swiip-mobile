@@ -600,21 +600,20 @@ class ApiClient {
   async getBoostStatus(): Promise<{
     active: boolean;
     endsAt?: string;
+    boostsRemaining: number;
+    weeklyLimit: number;
   }> {
     const response = await this.client.get("/api/v1/boost/status");
     return response.data;
   }
 
-  async activateBoost(
-    minutes: 60 | 180 | 720
-  ): Promise<{
+  async activateBoost(): Promise<{
     startsAt: string;
     endsAt: string;
     active: boolean;
+    boostsRemaining: number;
   }> {
-    const response = await this.client.post("/api/v1/boost/activate", {
-      minutes,
-    });
+    const response = await this.client.post("/api/v1/boost/activate");
     return response.data;
   }
 
@@ -650,6 +649,15 @@ class ApiClient {
     premiumExpiresAt: string | null;
   }> {
     const response = await this.client.get("/api/v1/billing/status");
+    return response.data;
+  }
+
+  async purchaseBoost(): Promise<{
+    success: boolean;
+    purchasedAmount: number;
+    message: string;
+  }> {
+    const response = await this.client.post("/api/v1/billing/purchase-boost");
     return response.data;
   }
 

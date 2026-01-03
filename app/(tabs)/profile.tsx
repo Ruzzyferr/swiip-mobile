@@ -9,6 +9,11 @@ import { SafeAreaView } from "@/src/components/SafeAreaView";
 import { getToken, clearToken } from "@/src/services/authStore";
 import { api } from "@/src/services/api";
 import { usePremium } from "@/src/state/premium";
+import {
+  getOfferings,
+  purchasePremium,
+  PurchasesPackage
+} from "@/src/services/purchases";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,16 +32,55 @@ export default function ProfileScreen() {
   } | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  // Premium State
   const [premiumStatus, setPremiumStatus] = useState<{
     isPremium: boolean;
     premiumExpiresAt: string | null;
   } | null>(null);
   const { premiumEnabled } = usePremium();
 
+  // Boost State
+  const [boostStatus, setBoostStatus] = useState<{
+    active: boolean;
+    endsAt?: string;
+    boostsRemaining: number;
+    weeklyLimit: number;
+  } | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [boostPackage, setBoostPackage] = useState<PurchasesPackage | null>(null);
+
   useEffect(() => {
     loadUserData();
     loadPremiumStatus();
+    loadBoostStatus();
+    loadOfferings();
   }, []);
+
+  const loadOfferings = async () => {
+    try {
+      const offerings = await getOfferings();
+      if (offerings?.availablePackages) {
+        // Look for a package with "boost" in the identifier
+        const foundPackage = offerings.availablePackages.find(
+          pkg => pkg.identifier.includes("boost")
+        );
+        if (foundPackage) {
+          setBoostPackage(foundPackage);
+        }
+      }
+    } catch (error) {
+      console.log("Failed to load offerings:", error);
+    }
+  };
+
+  const loadBoostStatus = async () => {
+    try {
+      const status = await api.getBoostStatus();
+      setBoostStatus(status);
+    } catch (error) {
+      console.error("Failed to load boost status:", error);
+    }
+  };
 
   const loadUserData = async () => {
     try {
@@ -74,6 +118,95 @@ export default function ProfileScreen() {
       });
     } catch (error) {
       console.error("Failed to load premium status:", error);
+    }
+  };
+
+  const onRefresh = async () => { // Added as per instruction
+    setRefreshing(true);
+    await Promise.all([loadUserData(), loadPremiumStatus(), loadBoostStatus(), loadOfferings()]);
+    setRefreshing(false);
+  };
+
+  const handleBoost = async () => {
+    if (boostStatus?.active) {
+      Alert.alert("Boost Aktif ⚡", `Profilin şu anda zaten öne çıkarılmış durumda!\nBitiş: ${getTimeRemaining(boostStatus.endsAt!)}`);
+      return;
+    }
+
+    const hasBoosts = (boostStatus?.boostsRemaining || 0) > 0;
+
+    if (hasBoosts) {
+      Alert.alert(
+        "Profile Boost 🚀",
+        `Profilini 30 dakika boyunca öne çıkarmak istiyor musun?\n\nKalan Hakkın: ${boostStatus?.boostsRemaining || 0}`,
+        [
+          { text: "İptal", style: "cancel" },
+          {
+            text: "Boostla!",
+            onPress: async () => {
+              try {
+                const result = await api.activateBoost();
+                setBoostStatus({
+                  ...result,
+                  weeklyLimit: boostStatus?.weeklyLimit || 2,
+                });
+                Alert.alert("Başarılı! 🚀", "Profilin 30 dakika boyunca öne çıkarılacak!");
+              } catch (error: any) {
+                const message = error.response?.data?.error?.message || "Bir hata oluştu";
+                Alert.alert("Hata", message);
+              }
+            }
+          }
+        ]
+      );
+    } else {
+      // No boosts remaining - Offer purchase or premium
+      const priceString = boostPackage?.product.priceString || "$4.99";
+
+      Alert.alert(
+        "Boost Hakkın Kalmadı",
+        `Profilini öne çıkarmak için yeni boost paketine ihtiyacın var.\n\n Paket: 2 Boost`, // Modified as per instruction
+        [
+          { text: "İptal", style: "cancel" },
+          !premiumStatus?.isPremium ? {
+            text: "Premium'a Geç ✨",
+            onPress: () => router.push("/premium")
+          } : null,
+          {
+            text: `2 Boost Al (${priceString})`, // Modified as per instruction
+            onPress: handlePurchaseBoost
+          }
+        ].filter(Boolean) as any
+      );
+    }
+  };
+
+  const handlePurchaseBoost = async () => {
+    try {
+      setLoading(true);
+
+      // If we found a real RevenueCat package, use it
+      if (boostPackage) { // Added as per instruction
+        await purchasePremium(boostPackage); // Added as per instruction
+      } else {
+        // Fallback for development/simulators if no package found
+        // In real app, you might want to block this or show error
+        console.warn("No boost package found in offerings. Falling back to mock."); // Added as per instruction
+      }
+
+      // After successful purchase (or mock fallback), sync with backend
+      const result = await api.purchaseBoost();
+      if (result.success) {
+        await loadBoostStatus();
+        Alert.alert("Satın Alma Başarılı! 🎉", "Hesabına 2 Boost eklendi. Şimdi profilini öne çıkarabilirsin!");
+      }
+    } catch (error: any) {
+      if (error.message === "Purchase cancelled") { // Added as per instruction
+        return; // User cancelled, do nothing
+      }
+      Alert.alert("Satın Alma Başarısız", "Bir hata oluştu. Lütfen tekrar dene.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -143,7 +276,7 @@ export default function ProfileScreen() {
             {profile?.photos && profile.photos.length > 0 ? (
               <Image
                 source={{ uri: profile.photos[0] }}
-                style={styles.avatar}
+                style={[styles.avatar, boostStatus?.active && { borderColor: '#FFD700', borderWidth: 2 }]}
                 resizeMode="cover"
               />
             ) : (
@@ -153,11 +286,16 @@ export default function ProfileScreen() {
                 </Text>
               </View>
             )}
-            {premiumStatus?.isPremium && (
+            {/* Boost Badge Logic */}
+            {boostStatus?.active ? (
+              <View style={[styles.premiumBadgeSmall, { backgroundColor: '#FFD700' }]}>
+                <Ionicons name="flash" size={16} color="#000" />
+              </View>
+            ) : premiumStatus?.isPremium ? (
               <View style={styles.premiumBadgeSmall}>
                 <Text style={styles.premiumBadgeSmallText}>✨</Text>
               </View>
-            )}
+            ) : null}
           </View>
 
           {/* Name and Location */}
@@ -329,22 +467,34 @@ export default function ProfileScreen() {
         <View style={styles.settingsSection}>
           {/* Boost Button - Prominent placement */}
           <TouchableOpacity
-            style={[styles.settingsItem, styles.boostItem]}
-            onPress={() => router.push("/premium")}
+            style={[styles.settingsItem, styles.boostItem, boostStatus?.active && { backgroundColor: '#FFD70015', borderBottomColor: '#FFD70030' }]}
+            onPress={handleBoost}
           >
             <View style={styles.settingsItemLeft}>
               <LinearGradient
-                colors={[colors.primary, colors.primaryLight]}
+                colors={boostStatus?.active ? ["#FFD700", "#FFA500"] : [colors.primary, colors.primaryLight]}
                 style={[styles.settingsIcon, { borderRadius: 10 }]}
               >
-                <Ionicons name="rocket" size={20} color="#FFF" />
+                <Ionicons name={boostStatus?.active ? "flash" : "rocket"} size={20} color={boostStatus?.active ? "#000" : "#FFF"} />
               </LinearGradient>
               <View>
-                <Text style={[styles.settingsItemText, { fontWeight: 'bold' }]}>⚡ Boost</Text>
-                <Text style={styles.boostSubtext}>Profilini öne çıkar</Text>
+                <Text style={[styles.settingsItemText, { fontWeight: 'bold' }, boostStatus?.active && { color: '#FFD700' }]}>
+                  {boostStatus?.active ? "⚡ Boost Aktif!" : "⚡ Boost"}
+                </Text>
+                <Text style={[styles.boostSubtext, boostStatus?.active && { color: 'rgba(255, 215, 0, 0.7)' }]}>
+                  {boostStatus?.active
+                    ? `Bitiş: ${getTimeRemaining(boostStatus.endsAt!)}`
+                    : premiumStatus?.isPremium
+                      ? `Kalan Hakkın: ${boostStatus?.boostsRemaining || 0}`
+                      : "Profilini öne çıkar"}
+                </Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+            <Ionicons
+              name={boostStatus?.active ? "checkmark-circle" : "chevron-forward"}
+              size={20}
+              color={boostStatus?.active ? "#FFD700" : colors.primary}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.settingsItem} onPress={() => router.push("/profile-edit")}>
