@@ -917,6 +917,7 @@ export default function ConversationScreen() {
                 multiline
                 maxLength={2000}
                 editable={!sending && !polishing}
+                scrollEnabled={true}
               />
             </View>
 
@@ -1307,16 +1308,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderDark,
     paddingHorizontal: spacing.md,
-    paddingVertical: Platform.OS === "ios" ? spacing.xs : spacing.sm,
-    minHeight: 36,
-    maxHeight: 100,
+    paddingVertical: Platform.OS === "ios" ? 8 : 4,
+    minHeight: 40,
+    maxHeight: 120,
+    justifyContent: "center",
   },
   input: {
-    flex: 1,
     fontSize: typography.fontSize.base,
     color: colors.textDark,
-    paddingVertical: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
     textAlignVertical: "center",
+    maxHeight: 100,
   },
   aiButtonContainer: {
     position: "relative",

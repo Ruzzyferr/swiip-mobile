@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "Swiip-mobile",
+    "name": "Swiip",
     "slug": "swiip",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/swiip.png",
     "scheme": "swiipmobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/swiip.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -26,7 +26,7 @@
     "android": {
       "package": "com.swiip.mobile",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/swiip.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
