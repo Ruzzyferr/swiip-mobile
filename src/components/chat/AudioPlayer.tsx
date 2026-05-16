@@ -37,8 +37,8 @@ const WaveformBar = ({
         const isPlayed = barPosition < progress.value;
 
         // Custom colors for better contrast
-        const activeColor = isMyMessage ? "#FFFFFF" : colors.primary;
-        const inactiveColor = isMyMessage ? "rgba(255,255,255,0.4)" : "rgba(108, 93, 211, 0.3)";
+        const activeColor = isMyMessage ? colors.onMedia : colors.primary;
+        const inactiveColor = isMyMessage ? colors.onMediaFaint : colors.primaryFaint;
 
         return {
             backgroundColor: isPlayed ? activeColor : inactiveColor,
@@ -287,7 +287,7 @@ export const AudioPlayer = ({ audioUrl, isMyMessage }: AudioPlayerProps) => {
     if (isMyMessage) {
         return (
             <LinearGradient
-                colors={['#818CF8', '#6C5DD3']} // Lighter purple to Primary
+                colors={[colors.primaryLight, colors.primary]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[styles.container, styles.containerMy]}
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     playButtonMy: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.onMedia,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     timeTextMy: {
-        color: "rgba(255,255,255,0.9)",
+        color: colors.onMediaSubtle,
     },
     timeTextOther: {
         color: colors.textSecondary,

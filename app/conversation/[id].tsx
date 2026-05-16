@@ -73,14 +73,24 @@ const useKeyboardAnimation = () => {
 export default function ConversationScreen() {
   const router = useRouter();
   const navigation = useNavigation();
-  const params = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; prefill?: string }>();
   const conversationId = params.id;
+  const prefillFromRoute = typeof params.prefill === "string" ? params.prefill : undefined;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [polishing, setPolishing] = useState(false);
-  const [messageText, setMessageText] = useState("");
+  const [messageText, setMessageText] = useState(prefillFromRoute ?? "");
+  // Track which prefill values have been applied so navigating to the same
+  // conversation later (without a prefill) doesn't clobber the user's draft.
+  const appliedPrefillRef = useRef<string | null>(prefillFromRoute ?? null);
+  useEffect(() => {
+    if (prefillFromRoute && appliedPrefillRef.current !== prefillFromRoute) {
+      setMessageText(prefillFromRoute);
+      appliedPrefillRef.current = prefillFromRoute;
+    }
+  }, [prefillFromRoute]);
   const [tone, setTone] = useState<Tone>("neutral");
   const [showToneSelector, setShowToneSelector] = useState(false);
   const toneSelectorAnim = useRef(new Animated.Value(0)).current;

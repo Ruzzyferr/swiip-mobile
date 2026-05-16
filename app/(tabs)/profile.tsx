@@ -287,7 +287,7 @@ export default function ProfileScreen() {
             {profile?.photos && profile.photos.length > 0 ? (
               <Image
                 source={{ uri: profile.photos[0] }}
-                style={[styles.avatar, boostStatus?.active && { borderColor: '#FFD700', borderWidth: 2 }]}
+                style={[styles.avatar, boostStatus?.active && { borderColor: colors.boostGold, borderWidth: 2 }]}
                 resizeMode="cover"
               />
             ) : (
@@ -299,7 +299,7 @@ export default function ProfileScreen() {
             )}
             {/* Boost Badge Logic */}
             {boostStatus?.active ? (
-              <View style={[styles.premiumBadgeSmall, { backgroundColor: '#FFD700' }]}>
+              <View style={[styles.premiumBadgeSmall, { backgroundColor: colors.boostGold }]}>
                 <Ionicons name="flash" size={16} color="#000" />
               </View>
             ) : premiumStatus?.isPremium ? (
@@ -478,18 +478,18 @@ export default function ProfileScreen() {
         <View style={styles.settingsSection}>
           {/* Boost Button - Prominent placement */}
           <TouchableOpacity
-            style={[styles.settingsItem, styles.boostItem, boostStatus?.active && { backgroundColor: '#FFD70015', borderBottomColor: '#FFD70030' }]}
+            style={[styles.settingsItem, styles.boostItem, boostStatus?.active && { backgroundColor: colors.boostGoldSoft, borderBottomColor: colors.boostGoldBorder }]}
             onPress={handleBoost}
           >
             <View style={styles.settingsItemLeft}>
               <LinearGradient
-                colors={boostStatus?.active ? ["#FFD700", "#FFA500"] : [colors.primary, colors.primaryLight]}
+                colors={boostStatus?.active ? [colors.boostGold, colors.boostGoldDeep] : [colors.primary, colors.primaryLight]}
                 style={[styles.settingsIcon, { borderRadius: 10 }]}
               >
                 <Ionicons name={boostStatus?.active ? "flash" : "rocket"} size={20} color={boostStatus?.active ? "#000" : "#FFF"} />
               </LinearGradient>
               <View>
-                <Text style={[styles.settingsItemText, { fontWeight: 'bold' }, boostStatus?.active && { color: '#FFD700' }]}>
+                <Text style={[styles.settingsItemText, { fontWeight: 'bold' }, boostStatus?.active && { color: colors.boostGold }]}>
                   {boostStatus?.active ? t('profile.boost_active') : t('profile.boost_button')}
                 </Text>
                 <Text style={[styles.boostSubtext, boostStatus?.active && { color: 'rgba(255, 215, 0, 0.7)' }]}>
@@ -504,7 +504,7 @@ export default function ProfileScreen() {
             <Ionicons
               name={boostStatus?.active ? "checkmark-circle" : "chevron-forward"}
               size={20}
-              color={boostStatus?.active ? "#FFD700" : colors.primary}
+              color={boostStatus?.active ? colors.boostGold : colors.primary}
             />
           </TouchableOpacity>
 

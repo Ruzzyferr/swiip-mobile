@@ -28,12 +28,22 @@
         "empty": {
             "title": "Everyone seen for today!",
             "text": "New people will be here soon...\nCheck back later 😊",
-            "refresh": "Refresh"
+            "refresh": "Refresh",
+            "filtered_title": "Your filters look narrow",
+            "filtered_text": "We couldn't find anyone matching these.\nTry loosening the filters a bit 👌",
+            "reset_filters": "Reset filters"
         },
         "match": {
             "title": "It's a match!",
             "subtitle": "You and {{name}} liked each other",
             "say_hi": "Say hi",
+            "icebreaker_label": "Break the ice with",
+            "icebreakers": [
+                "Hey! I checked out your profile, it looks great. Where should we start? ✨",
+                "Hi! 👋 Which language do you want to chat in?",
+                "Hey, how's your day going?",
+                "Hi {{name}}, something on your profile caught my eye — tell me about it 😊"
+            ],
             "continue": "Continue swiping"
         },
         "boost": {
@@ -251,7 +261,10 @@
         "write_placeholder": "Write your message...",
         "cancel": "Cancel",
         "send": "Send",
-        "loading": "Loading..."
+        "loading": "Loading...",
+        "you_prefix": "You: ",
+        "start_conversation": "Start a conversation",
+        "open_conversation_with": "Open conversation with {{name}}"
     },
     "profile": {
         "loading": "Loading...",
@@ -298,5 +311,29 @@
         "days": "days",
         "hours": "hours",
         "minutes": "minutes"
+    },
+    "safety": {
+        "block": "Block",
+        "report": "Report"
+    },
+    "discovery_card": {
+        "location_title": "Location",
+        "location_unknown": "Not specified",
+        "scroll_hint": "Scroll",
+        "speaks": "Speaks",
+        "learning": "Learning",
+        "about": "About",
+        "read_more": "Read more",
+        "read_less": "Read less",
+        "new_badge": "NEW",
+        "new_badge_a11y": "Newly joined user"
+    },
+    "a11y": {
+        "like": "Like",
+        "pass": "Pass",
+        "favorite": "Favorite",
+        "open_profile": "Open profile",
+        "next_photo": "Next photo",
+        "previous_photo": "Previous photo"
     }
 }

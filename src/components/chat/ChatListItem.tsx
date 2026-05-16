@@ -1,8 +1,10 @@
-import React from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import React, { useCallback } from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useTranslation } from "react-i18next";
 import { colors } from "@/src/theme/colors";
 import { spacing } from "@/src/theme/spacing";
 import { typography } from "@/src/theme/typography";
+import { OptimizedImage } from "@/src/components/ui/OptimizedImage";
 
 type ChatListItemProps = {
   conversationId: string;
@@ -20,7 +22,7 @@ type ChatListItemProps = {
   onPress: (conversationId: string) => void;
 };
 
-export function ChatListItem({
+function ChatListItemBase({
   conversationId,
   otherUser,
   lastMessage,
@@ -30,6 +32,8 @@ export function ChatListItem({
   isMyMessage = false,
   onPress,
 }: ChatListItemProps) {
+  const { t } = useTranslation();
+  const handlePress = useCallback(() => onPress(conversationId), [conversationId, onPress]);
   const formatTime = (timeString?: string) => {
     if (!timeString) return null;
     try {
@@ -53,14 +57,22 @@ export function ChatListItem({
   };
 
   return (
-    <TouchableOpacity onPress={() => onPress(conversationId)} activeOpacity={0.7}>
+    <TouchableOpacity
+      onPress={handlePress}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={t("chat.open_conversation_with", { name: otherUser.displayName })}
+    >
       <View style={styles.container}>
         {/* Avatar */}
         {otherUser.photos && otherUser.photos.length > 0 ? (
-          <Image
+          <OptimizedImage
             source={{ uri: otherUser.photos[0] }}
             style={styles.avatar}
+            containerStyle={styles.avatar}
             resizeMode="cover"
+            fallbackIconSize={28}
+            showLoader={false}
           />
         ) : (
           <View style={styles.avatarPlaceholder}>
@@ -86,8 +98,8 @@ export function ChatListItem({
               style={[styles.lastMessage, unread && styles.lastMessageUnread]}
               numberOfLines={1}
             >
-              {isMyMessage && <Text style={styles.senderPrefix}>Sen: </Text>}
-              {lastMessage || <Text style={styles.placeholderText}>{otherUser.city || "Sohbete başla"}</Text>}
+              {isMyMessage && <Text style={styles.senderPrefix}>{t("chat.you_prefix")}</Text>}
+              {lastMessage || <Text style={styles.placeholderText}>{otherUser.city || t("chat.start_conversation")}</Text>}
             </Text>
             {unread && unreadCount > 0 && (
               <View style={styles.unreadBadge}>
@@ -102,6 +114,20 @@ export function ChatListItem({
     </TouchableOpacity>
   );
 }
+
+export const ChatListItem = React.memo(ChatListItemBase, (prev, next) => {
+  // Re-render only when message-row state actually changes
+  return (
+    prev.conversationId === next.conversationId &&
+    prev.lastMessage === next.lastMessage &&
+    prev.time === next.time &&
+    prev.unread === next.unread &&
+    prev.unreadCount === next.unreadCount &&
+    prev.isMyMessage === next.isMyMessage &&
+    prev.otherUser.displayName === next.otherUser.displayName &&
+    prev.otherUser.photos[0] === next.otherUser.photos[0]
+  );
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -154,7 +180,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.xs,
   },
   nameUnread: {
-    color: "#FFFFFF",
+    color: colors.textInverse,
   },
   time: {
     fontSize: typography.fontSize.xs,
@@ -207,7 +233,7 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
   },
   unreadBadgeText: {
-    color: "#FFFFFF",
+    color: colors.textInverse,
     fontSize: 11,
     fontWeight: typography.fontWeight.bold,
   },

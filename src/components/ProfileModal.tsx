@@ -5,7 +5,6 @@ import {
     StyleSheet,
     Modal,
     TouchableOpacity,
-    Image,
     ScrollView,
     Dimensions,
 } from "react-native";
@@ -16,6 +15,7 @@ import { spacing } from "@/src/theme/spacing";
 import { api } from "@/src/services/api";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
+import { OptimizedImage } from "./ui/OptimizedImage";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -118,11 +118,13 @@ export function ProfileModal({
                             >
                                 {profileData.photos && profileData.photos.length > 0 ? (
                                     profileData.photos.map((photo, index) => (
-                                        <Image
+                                        <OptimizedImage
                                             key={index}
                                             source={{ uri: photo }}
                                             style={styles.carouselPhoto}
+                                            containerStyle={styles.carouselPhoto}
                                             resizeMode="cover"
+                                            fallbackIconSize={64}
                                         />
                                     ))
                                 ) : (
@@ -145,7 +147,7 @@ export function ProfileModal({
                                 style={styles.floatingCloseButton}
                                 onPress={handleClose}
                             >
-                                <Ionicons name="close" size={28} color="#FFFFFF" />
+                                <Ionicons name="close" size={28} color={colors.onMedia} />
                             </TouchableOpacity>
 
                             {/* Pagination Dots */}
@@ -256,7 +258,7 @@ export function ProfileModal({
                                     onDecline();
                                 }}
                             >
-                                <Ionicons name="close" size={32} color="#FF4D6D" />
+                                <Ionicons name="close" size={32} color={colors.passRed} />
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -270,7 +272,7 @@ export function ProfileModal({
                                     colors={[colors.primary, colors.primaryLight]}
                                     style={styles.acceptFabGradient}
                                 >
-                                    <Ionicons name="heart" size={32} color="#FFFFFF" />
+                                    <Ionicons name="heart" size={32} color={colors.onMedia} />
                                 </LinearGradient>
                             </TouchableOpacity>
                         </LinearGradient>
@@ -338,12 +340,12 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: "rgba(0,0,0,0.4)",
+        backgroundColor: colors.overlayLight,
         justifyContent: "center",
         alignItems: "center",
         zIndex: 10,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.1)",
+        borderColor: colors.surfaceTintBorder,
     },
     paginationContainer: {
         position: "absolute",
@@ -367,8 +369,8 @@ const styles = StyleSheet.create({
     headerName: {
         fontSize: 32,
         fontWeight: "800",
-        color: "#FFFFFF",
-        textShadowColor: "rgba(0, 0, 0, 0.5)",
+        color: colors.onMedia,
+        textShadowColor: colors.shadowStrong,
         textShadowOffset: { width: 0, height: 2 },
         textShadowRadius: 4,
         marginBottom: 4,
@@ -380,7 +382,7 @@ const styles = StyleSheet.create({
     },
     headerLocationText: {
         fontSize: 16,
-        color: "rgba(255, 255, 255, 0.9)",
+        color: colors.onMediaSubtle,
         fontWeight: "500",
     },
     profileDetailsContent: {
@@ -434,12 +436,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     nativeTag: {
-        backgroundColor: "rgba(255, 255, 255, 0.05)",
-        borderColor: "rgba(255, 255, 255, 0.1)",
+        backgroundColor: colors.surfaceTint,
+        borderColor: colors.surfaceTintBorder,
     },
     practiceTag: {
         backgroundColor: "transparent",
-        borderColor: "rgba(255, 255, 255, 0.1)",
+        borderColor: colors.surfaceTintBorder,
         borderStyle: "dashed",
         flexDirection: "row",
         alignItems: "center",
@@ -470,7 +472,7 @@ const styles = StyleSheet.create({
         textTransform: "uppercase",
     },
     favoriteText: {
-        color: "#FFFFFF",
+        color: colors.onMedia,
         fontSize: 16,
         fontStyle: "italic",
         lineHeight: 22,
@@ -500,9 +502,9 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     declineFab: {
-        backgroundColor: "#2A2A35",
+        backgroundColor: colors.surfaceDark,
         borderWidth: 1,
-        borderColor: "rgba(255, 77, 109, 0.3)",
+        borderColor: colors.passRedBorder,
     },
     acceptFab: {
         overflow: "hidden",

@@ -28,13 +28,23 @@
         "empty": {
             "title": "Bugünlük herkesi gördün!",
             "text": "Yeni insanlar yakında burada olacak.\nBiraz sonra tekrar kontrol et 😊",
-            "refresh": "Yenile"
+            "refresh": "Yenile",
+            "filtered_title": "Filtreler çok dar görünüyor",
+            "filtered_text": "Bu kriterlere uyan kimseyi göremedik.\nFiltreleri biraz gevşetmeyi dene 👌",
+            "reset_filters": "Filtreleri sıfırla"
         },
         "match": {
             "title": "Eşleşme var!",
             "subtitle": "Sen ve {{name}} birbirinizi beğendiniz",
             "say_hi": "Merhaba de",
-            "continue": "Kaydırmaya devam et"
+            "continue": "Kaydırmaya devam et",
+            "icebreaker_label": "Konuşmaya şununla başla",
+            "icebreakers": [
+                "Selam! Profilini gördüm, harika görünüyor. Nereden başlayalım sohbete? ✨",
+                "Merhaba! 👋 Hangi dilde konuşmak istersin?",
+                "Hey! Bugün nasıl gidiyor?",
+                "Selam {{name}}, profilinde dikkatimi çeken bir şey gördüm — sen anlat istersen 😊"
+            ]
         },
         "boost": {
             "title": "Profilini Öne Çıkar",
@@ -251,7 +261,10 @@
         "write_placeholder": "Mesajınızı yazın...",
         "cancel": "İptal",
         "send": "Gönder",
-        "loading": "Yükleniyor..."
+        "loading": "Yükleniyor...",
+        "you_prefix": "Sen: ",
+        "start_conversation": "Sohbete başla",
+        "open_conversation_with": "{{name}} ile sohbeti aç"
     },
     "profile": {
         "loading": "Yükleniyor...",
@@ -298,5 +311,29 @@
         "days": "gün",
         "hours": "saat",
         "minutes": "dakika"
+    },
+    "safety": {
+        "block": "Engelle",
+        "report": "Bildir"
+    },
+    "discovery_card": {
+        "location_title": "Konum",
+        "location_unknown": "Belirtilmemiş",
+        "scroll_hint": "Kaydır",
+        "speaks": "Konuşuyor",
+        "learning": "Öğreniyor",
+        "about": "Hakkında",
+        "read_more": "Devamını oku",
+        "read_less": "Daha az",
+        "new_badge": "YENİ",
+        "new_badge_a11y": "Yeni katılan kullanıcı"
+    },
+    "a11y": {
+        "like": "Beğen",
+        "pass": "Geç",
+        "favorite": "Favori",
+        "open_profile": "Profili aç",
+        "next_photo": "Sonraki fotoğraf",
+        "previous_photo": "Önceki fotoğraf"
     }
 }

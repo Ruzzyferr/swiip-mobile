@@ -21,8 +21,10 @@ import Animated, {
     withTiming,
     runOnJS,
 } from "react-native-reanimated";
+import { useTranslation } from "react-i18next";
 import { colors } from "@/src/theme/colors";
 import { NewMatchEvent } from "@/src/state/socket";
+import { useReducedMotion } from "@/src/hooks/useReducedMotion";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -35,25 +37,32 @@ interface MatchPopupProps {
 
 export function MatchPopup({ visible, match, onClose, onSendMessage }: MatchPopupProps) {
     const router = useRouter();
+    const { t } = useTranslation();
+    const reducedMotion = useReducedMotion();
     const scale = useSharedValue(0);
     const opacity = useSharedValue(0);
     const heartScale = useSharedValue(0);
 
     useEffect(() => {
         if (visible && match) {
-            // Animate in
             opacity.value = withTiming(1, { duration: 300 });
-            scale.value = withSpring(1, { damping: 12, stiffness: 180 });
-            heartScale.value = withDelay(200, withSequence(
-                withSpring(1.3, { damping: 8, stiffness: 200 }),
-                withSpring(1, { damping: 15, stiffness: 200 })
-            ));
+            if (reducedMotion) {
+                // Skip the bouncy spring; just fade/scale linearly.
+                scale.value = withTiming(1, { duration: 200 });
+                heartScale.value = withTiming(1, { duration: 200 });
+            } else {
+                scale.value = withSpring(1, { damping: 12, stiffness: 180 });
+                heartScale.value = withDelay(200, withSequence(
+                    withSpring(1.3, { damping: 8, stiffness: 200 }),
+                    withSpring(1, { damping: 15, stiffness: 200 })
+                ));
+            }
         } else {
             opacity.value = withTiming(0, { duration: 200 });
             scale.value = withTiming(0, { duration: 200 });
             heartScale.value = 0;
         }
-    }, [visible, match]);
+    }, [visible, match, reducedMotion]);
 
     const backdropStyle = useAnimatedStyle(() => ({
         opacity: opacity.value,
@@ -68,16 +77,28 @@ export function MatchPopup({ visible, match, onClose, onSendMessage }: MatchPopu
         transform: [{ scale: heartScale.value }],
     }));
 
-    const handleSendMessage = () => {
+    const handleSendMessage = (prefill?: string) => {
         if (match) {
             onClose();
-            router.push(`/conversation/${match.conversationId}`);
+            const route = prefill
+                ? `/conversation/${match.conversationId}?prefill=${encodeURIComponent(prefill)}`
+                : `/conversation/${match.conversationId}`;
+            router.push(route as any);
         }
     };
 
     if (!match) return null;
 
     const photo = match.otherUser.photos?.[0];
+
+    // i18next array-returning syntax. Fallback to empty array if missing locale.
+    const rawIcebreakers = t("home.match.icebreakers", {
+        returnObjects: true,
+        name: match.otherUser.displayName,
+    }) as unknown;
+    const icebreakers: string[] = Array.isArray(rawIcebreakers)
+        ? (rawIcebreakers as string[])
+        : [];
 
     return (
         <Modal
@@ -98,24 +119,30 @@ export function MatchPopup({ visible, match, onClose, onSendMessage }: MatchPopu
                         style={styles.gradient}
                     >
                         {/* Close button */}
-                        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                            <Ionicons name="close" size={24} color="rgba(255,255,255,0.7)" />
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={onClose}
+                            accessibilityRole="button"
+                            accessibilityLabel={t("common.close")}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                            <Ionicons name="close" size={24} color={colors.onMediaMuted} />
                         </TouchableOpacity>
 
                         {/* Heart icon */}
                         <Animated.View style={[styles.heartContainer, heartStyle]}>
                             <LinearGradient
-                                colors={["#FF6B8A", "#FF3B6B"]}
+                                colors={[colors.accent, colors.accentDark]}
                                 style={styles.heartGradient}
                             >
-                                <Ionicons name="heart" size={32} color="#FFFFFF" />
+                                <Ionicons name="heart" size={32} color={colors.onMedia} />
                             </LinearGradient>
                         </Animated.View>
 
                         {/* It's a Match! */}
-                        <Text style={styles.title}>Eşleştiniz! 🎉</Text>
+                        <Text style={styles.title}>{t("home.match.title")}</Text>
                         <Text style={styles.subtitle}>
-                            Sen ve {match.otherUser.displayName} birbirinizi beğendiniz
+                            {t("home.match.subtitle", { name: match.otherUser.displayName })}
                         </Text>
 
                         {/* Profile Photo */}
@@ -124,26 +151,53 @@ export function MatchPopup({ visible, match, onClose, onSendMessage }: MatchPopu
                                 <Image source={{ uri: photo }} style={styles.photo} />
                             ) : (
                                 <View style={[styles.photo, styles.placeholderPhoto]}>
-                                    <Ionicons name="person" size={48} color="rgba(255,255,255,0.5)" />
+                                    <Ionicons name="person" size={48} color={colors.onMediaSubtle} />
                                 </View>
                             )}
                         </View>
 
                         <Text style={styles.name}>{match.otherUser.displayName}</Text>
 
+                        {/* Icebreaker Suggestions */}
+                        {icebreakers.length > 0 && (
+                            <View style={styles.icebreakerSection}>
+                                <Text style={styles.icebreakerLabel}>
+                                    {t("home.match.icebreaker_label")}
+                                </Text>
+                                <View style={styles.icebreakerChips}>
+                                    {icebreakers.map((message, i) => (
+                                        <TouchableOpacity
+                                            key={i}
+                                            style={styles.icebreakerChip}
+                                            onPress={() => handleSendMessage(message)}
+                                            activeOpacity={0.7}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={message}
+                                        >
+                                            <Text style={styles.icebreakerChipText} numberOfLines={2}>
+                                                {message}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
+
                         {/* Action Buttons */}
                         <View style={styles.buttonsContainer}>
                             <TouchableOpacity
                                 style={styles.messageButton}
-                                onPress={handleSendMessage}
+                                onPress={() => handleSendMessage()}
                                 activeOpacity={0.8}
+                                accessibilityRole="button"
+                                accessibilityLabel={t("home.match.say_hi")}
                             >
                                 <LinearGradient
-                                    colors={["#FFFFFF", "#F0F0F0"]}
+                                    colors={[colors.onMedia, colors.surfaceHover]}
                                     style={styles.messageButtonGradient}
                                 >
                                     <Ionicons name="chatbubble" size={20} color={colors.primary} />
-                                    <Text style={styles.messageButtonText}>Mesaj Gönder</Text>
+                                    <Text style={styles.messageButtonText}>{t("home.match.say_hi")}</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
 
@@ -151,8 +205,10 @@ export function MatchPopup({ visible, match, onClose, onSendMessage }: MatchPopu
                                 style={styles.laterButton}
                                 onPress={onClose}
                                 activeOpacity={0.7}
+                                accessibilityRole="button"
+                                accessibilityLabel={t("home.match.continue")}
                             >
-                                <Text style={styles.laterButtonText}>Sonra</Text>
+                                <Text style={styles.laterButtonText}>{t("home.match.continue")}</Text>
                             </TouchableOpacity>
                         </View>
                     </LinearGradient>
@@ -167,7 +223,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "rgba(0, 0, 0, 0.6)",
+        backgroundColor: colors.overlay,
     },
     container: {
         width: SCREEN_WIDTH * 0.85,
@@ -209,7 +265,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: "bold",
-        color: "#FFFFFF",
+        color: colors.onMedia,
         marginTop: 12,
         textShadowColor: "rgba(0,0,0,0.2)",
         textShadowOffset: { width: 0, height: 2 },
@@ -230,7 +286,7 @@ const styles = StyleSheet.create({
         height: 120,
         borderRadius: 60,
         borderWidth: 4,
-        borderColor: "#FFFFFF",
+        borderColor: colors.onMedia,
     },
     placeholderPhoto: {
         backgroundColor: "rgba(255,255,255,0.2)",
@@ -240,8 +296,39 @@ const styles = StyleSheet.create({
     name: {
         fontSize: 22,
         fontWeight: "700",
-        color: "#FFFFFF",
-        marginBottom: 24,
+        color: colors.onMedia,
+        marginBottom: 16,
+    },
+    icebreakerSection: {
+        width: "100%",
+        marginBottom: 16,
+    },
+    icebreakerLabel: {
+        fontSize: 12,
+        fontWeight: "600",
+        color: colors.onMediaMuted,
+        textTransform: "uppercase",
+        letterSpacing: 1,
+        textAlign: "center",
+        marginBottom: 8,
+    },
+    icebreakerChips: {
+        gap: 8,
+    },
+    icebreakerChip: {
+        backgroundColor: colors.surfaceTintStrong,
+        borderWidth: 1,
+        borderColor: colors.surfaceTintBorder,
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        minHeight: 44, // accessibility touch target
+    },
+    icebreakerChipText: {
+        color: colors.onMedia,
+        fontSize: 13,
+        lineHeight: 18,
+        textAlign: "left",
     },
     buttonsContainer: {
         width: "100%",

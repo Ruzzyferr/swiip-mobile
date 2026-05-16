@@ -6,11 +6,11 @@ import {
   RefreshControl,
   Text,
   TouchableOpacity,
-  Image,
   TextInput,
   Modal,
   Alert,
 } from "react-native";
+import { OptimizedImage } from "@/src/components/ui/OptimizedImage";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { colors } from "@/src/theme/colors";
@@ -328,10 +328,13 @@ export default function ChatScreen() {
                         <View style={styles.requestContent}>
                           <View style={styles.requestHeader}>
                             {item.fromUser.photos && item.fromUser.photos.length > 0 ? (
-                              <Image
+                              <OptimizedImage
                                 source={{ uri: item.fromUser.photos[0] }}
                                 style={styles.requestAvatar}
+                                containerStyle={styles.requestAvatar}
                                 resizeMode="cover"
+                                fallbackIconSize={28}
+                                showLoader={false}
                               />
                             ) : (
                               <View style={styles.requestAvatarPlaceholder}>
@@ -362,12 +365,16 @@ export default function ChatScreen() {
                             <TouchableOpacity
                               style={styles.declineButton}
                               onPress={() => handleDeclineRequest(item.requestId, item.fromUserId)}
+                              accessibilityRole="button"
+                              accessibilityLabel={t('likes.decline')}
                             >
                               <Text style={styles.declineButtonText}>{t('likes.decline')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                               style={styles.acceptButton}
                               onPress={() => handleAcceptRequest(item.requestId, item.fromUserId)}
+                              accessibilityRole="button"
+                              accessibilityLabel={t('likes.accept')}
                             >
                               <Text style={styles.acceptButtonText}>{t('likes.accept')}</Text>
                             </TouchableOpacity>
@@ -393,12 +400,17 @@ export default function ChatScreen() {
                       <TouchableOpacity
                         style={styles.matchItem}
                         onPress={() => item.conversationId && handleConversationPress(item.conversationId)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t("chat.open_conversation_with", { name: item.otherUser.displayName })}
                       >
                         {item.otherUser.photos && item.otherUser.photos.length > 0 ? (
-                          <Image
+                          <OptimizedImage
                             source={{ uri: item.otherUser.photos[0] }}
                             style={styles.matchAvatar}
+                            containerStyle={styles.matchAvatar}
                             resizeMode="cover"
+                            fallbackIconSize={32}
+                            showLoader={false}
                           />
                         ) : (
                           <View style={styles.matchAvatarPlaceholder}>
@@ -607,7 +619,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   requestAvatarText: {
-    color: "#FFFFFF",
+    color: colors.onMedia,
     fontSize: typography.fontSize.lg,
     fontWeight: "bold",
   },
@@ -665,7 +677,7 @@ const styles = StyleSheet.create({
   acceptButtonText: {
     fontSize: typography.fontSize.sm,
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: colors.onMedia,
   },
   // Modal Styles
   modalOverlay: {
@@ -738,6 +750,6 @@ const styles = StyleSheet.create({
   modalButtonConfirmText: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
-    color: "#FFFFFF",
+    color: colors.onMedia,
   },
 });

@@ -1,12 +1,15 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Image, Dimensions } from "react-native";
+import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { ScrollView, RectButton, TouchableOpacity } from "react-native-gesture-handler";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { colors } from "@/src/theme/colors";
 import { spacing } from "@/src/theme/spacing";
 import { typography } from "@/src/theme/typography";
 import { Chip } from "./ui/Chip";
+import { LanguageFlag } from "./ui/LanguageFlag";
+import { OptimizedImage } from "./ui/OptimizedImage";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_PADDING = spacing.md;
@@ -27,6 +30,7 @@ type DiscoveryCardProps = {
       photos: string[];
       languagesNative: string[];
       languagesPractice: string[];
+      createdAt?: string;
     };
   };
   onSwipeLeft?: () => void;
@@ -34,11 +38,24 @@ type DiscoveryCardProps = {
   onFavorite?: () => void;
   favoritesRemaining?: number;
   isPremium?: boolean;
+  // True only for the top card of the SwipeDeck stack. Off-stack cards skip the
+  // expensive ScrollView + sections to keep the main thread responsive while the
+  // user is mid-swipe.
+  isActive?: boolean;
 };
 
-export function DiscoveryCard({ card, onSwipeLeft, onSwipeRight, onFavorite, favoritesRemaining, isPremium }: DiscoveryCardProps) {
+function DiscoveryCardBase({
+  card,
+  onSwipeLeft,
+  onSwipeRight,
+  onFavorite,
+  favoritesRemaining,
+  isPremium,
+  isActive = true,
+}: DiscoveryCardProps) {
   const { profile, distanceKm } = card;
   const [bioExpanded, setBioExpanded] = useState(false);
+  const { t } = useTranslation();
 
   const age = profile.birthYear
     ? new Date().getFullYear() - profile.birthYear
@@ -50,22 +67,15 @@ export function DiscoveryCard({ card, onSwipeLeft, onSwipeRight, onFavorite, fav
     return `${Math.round(km)} km away`;
   };
 
-  const getLanguageFlag = (lang: string) => {
-    const flags: Record<string, string> = {
-      English: "🇺🇸",
-      Turkish: "🇹🇷",
-      German: "🇩🇪",
-      Spanish: "🇪🇸",
-      French: "🇫🇷",
-      Italian: "🇮🇹",
-      Portuguese: "🇵🇹",
-      Russian: "🇷🇺",
-      Chinese: "🇨🇳",
-      Japanese: "🇯🇵",
-      Korean: "🇰🇷",
-    };
-    return flags[lang] || "";
-  };
+  // "New" badge: user profile created within the last 7 days.
+  const isNewUser = (() => {
+    if (!profile.createdAt) return false;
+    const created = new Date(profile.createdAt).getTime();
+    if (Number.isNaN(created)) return false;
+    return Date.now() - created < 7 * 24 * 60 * 60 * 1000;
+  })();
+
+  const renderLanguageFlag = (lang: string) => <LanguageFlag language={lang} size={16} />;
 
   const photos = profile.photos && profile.photos.length > 0 ? profile.photos : [];
 
@@ -79,6 +89,15 @@ export function DiscoveryCard({ card, onSwipeLeft, onSwipeRight, onFavorite, fav
         <View style={styles.nameRow}>
           <Text style={styles.name}>{profile.displayName}</Text>
           {age && <Text style={styles.age}>{age}</Text>}
+          {isNewUser && (
+            <View
+              style={styles.newBadge}
+              accessibilityRole="text"
+              accessibilityLabel={t("discovery_card.new_badge_a11y")}
+            >
+              <Text style={styles.newBadgeText}>{t("discovery_card.new_badge")}</Text>
+            </View>
+          )}
         </View>
         {(profile.city || distanceKm) && (
           <View style={styles.locationRow}>
@@ -98,17 +117,17 @@ export function DiscoveryCard({ card, onSwipeLeft, onSwipeRight, onFavorite, fav
   const renderLanguages = () => (
     (profile.languagesNative.length > 0 || profile.languagesPractice.length > 0) && (
       <View style={styles.section}>
-        <Text style={styles.sectionHeader}>My Languages</Text>
+        <Text style={styles.sectionHeader}>{t("profile.languages")}</Text>
         <View style={styles.sectionContent}>
           {profile.languagesNative.length > 0 && (
             <View style={styles.languageGroup}>
-              <Text style={styles.subSectionTitle}>SPEAKS</Text>
+              <Text style={styles.subSectionTitle}>{t("discovery_card.speaks")}</Text>
               <View style={styles.chipsContainer}>
                 {profile.languagesNative.map((lang, index) => (
                   <Chip
                     key={`native-${index}`}
                     label={lang}
-                    icon={getLanguageFlag(lang)}
+                    icon={renderLanguageFlag(lang)}
                     variant="primary"
                   />
                 ))}
@@ -117,13 +136,13 @@ export function DiscoveryCard({ card, onSwipeLeft, onSwipeRight, onFavorite, fav
           )}
           {profile.languagesPractice.length > 0 && (
             <View style={styles.languageGroup}>
-              <Text style={styles.subSectionTitle}>LEARNING</Text>
+              <Text style={styles.subSectionTitle}>{t("discovery_card.learning")}</Text>
               <View style={styles.chipsContainer}>
                 {profile.languagesPractice.map((lang, index) => (
                   <Chip
                     key={`practice-${index}`}
                     label={lang}
-                    icon={getLanguageFlag(lang)}
+                    icon={renderLanguageFlag(lang)}
                     variant="default"
                   />
                 ))}
@@ -139,7 +158,7 @@ export function DiscoveryCard({ card, onSwipeLeft, onSwipeRight, onFavorite, fav
   const renderBio = () => (
     profile.bio && (
       <View style={styles.section}>
-        <Text style={styles.sectionHeader}>About Me</Text>
+        <Text style={styles.sectionHeader}>{t("discovery_card.about")}</Text>
         <View style={styles.sectionContent}>
           <Text
             style={styles.bio}
@@ -153,7 +172,7 @@ export function DiscoveryCard({ card, onSwipeLeft, onSwipeRight, onFavorite, fav
               style={styles.readMoreButton}
             >
               <Text style={styles.readMoreText}>
-                {bioExpanded ? "Read less" : "Read more"}
+                {bioExpanded ? t("discovery_card.read_less") : t("discovery_card.read_more")}
               </Text>
             </TouchableOpacity>
           )}
@@ -169,6 +188,36 @@ export function DiscoveryCard({ card, onSwipeLeft, onSwipeRight, onFavorite, fav
   // 4. Photo 2
   // 5. Photo 3+
 
+  // For cards behind the top of the deck, render only the cover photo + basic
+  // info overlay. This skips the ScrollView, sections, extra photos, location
+  // card, action button row and safety section — keeping the deck mount cheap
+  // while the user swipes the top card.
+  if (!isActive) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.mainImageContainer}>
+          {photos.length > 0 ? (
+            <OptimizedImage
+              source={{ uri: photos[0] }}
+              style={styles.mainImage}
+              containerStyle={styles.mainImageContainer}
+              resizeMode="cover"
+              fallbackIconSize={64}
+              showLoader={false}
+            />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Text style={styles.imagePlaceholderText}>
+                {profile.displayName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+          {renderBasicInfo()}
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -180,10 +229,13 @@ export function DiscoveryCard({ card, onSwipeLeft, onSwipeRight, onFavorite, fav
         {/* First Photo with Info Overlay */}
         <View style={styles.mainImageContainer}>
           {photos.length > 0 ? (
-            <Image
+            <OptimizedImage
               source={{ uri: photos[0] }}
               style={styles.mainImage}
+              containerStyle={styles.mainImageContainer}
               resizeMode="cover"
+              fallbackIconSize={64}
+              accessibilityLabel={t("a11y.open_profile")}
             />
           ) : (
             <View style={styles.imagePlaceholder}>
@@ -206,7 +258,7 @@ export function DiscoveryCard({ card, onSwipeLeft, onSwipeRight, onFavorite, fav
                 end={{ x: 1, y: 1 }}
                 style={styles.favoriteButtonGradient}
               >
-                <MaterialIcons name="star" size={24} color="#FFFFFF" />
+                <MaterialIcons name="star" size={24} color={colors.onMedia} />
               </LinearGradient>
               {!isPremium && favoritesRemaining !== undefined && (
                 <View style={styles.favoriteBadge}>
@@ -218,8 +270,8 @@ export function DiscoveryCard({ card, onSwipeLeft, onSwipeRight, onFavorite, fav
 
           {/* Scroll Indicator */}
           <View style={styles.scrollIndicator}>
-            <MaterialIcons name="keyboard-arrow-up" size={20} color="rgba(255,255,255,0.7)" />
-            <Text style={styles.scrollIndicatorText}>Kaydır</Text>
+            <MaterialIcons name="keyboard-arrow-up" size={20} color={colors.onMediaMuted} />
+            <Text style={styles.scrollIndicatorText}>{t("discovery_card.scroll_hint")}</Text>
           </View>
         </View>
 
@@ -234,23 +286,24 @@ export function DiscoveryCard({ card, onSwipeLeft, onSwipeRight, onFavorite, fav
 
           {/* Remaining Photos */}
           {photos.slice(1).map((photoUri, index) => (
-            <View key={`photo-extra-${index}`} style={styles.extraPhotoContainer}>
-              <Image
-                source={{ uri: photoUri }}
-                style={styles.extraImage}
-                resizeMode="cover"
-              />
-            </View>
+            <OptimizedImage
+              key={`photo-extra-${index}`}
+              source={{ uri: photoUri }}
+              style={styles.extraImage}
+              containerStyle={styles.extraPhotoContainer}
+              resizeMode="cover"
+              fallbackIconSize={56}
+            />
           ))}
 
           {/* Bumble-style Location Card */}
           <View style={styles.locationCard}>
-            <Text style={styles.locationCardHeader}>Konum</Text>
+            <Text style={styles.locationCardHeader}>{t("discovery_card.location_title")}</Text>
             <View style={styles.locationCardContent}>
               <MaterialIcons name="location-on" size={28} color={colors.textSecondaryDark} />
               <View style={styles.locationCardInfo}>
                 <Text style={styles.locationCardCity}>
-                  {profile.city || "Belirtilmemiş"}
+                  {profile.city || t("discovery_card.location_unknown")}
                 </Text>
                 {distanceKm && (
                   <Text style={styles.locationCardDistance}>
@@ -267,42 +320,58 @@ export function DiscoveryCard({ card, onSwipeLeft, onSwipeRight, onFavorite, fav
               style={[styles.actionButtonCircle, styles.declineButton]}
               onPress={onSwipeLeft}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={t("a11y.pass")}
             >
-              <MaterialIcons name="close" size={32} color="#FF4D6D" />
+              <MaterialIcons name="close" size={32} color={colors.passRed} />
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionButtonCircle, styles.starButton]}
               onPress={onFavorite}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={t("a11y.favorite")}
             >
               <LinearGradient
                 colors={[colors.accent, colors.primary]}
                 style={styles.starGradient}
               >
-                <MaterialIcons name="star" size={26} color="#FFFFFF" />
+                <MaterialIcons name="star" size={26} color={colors.onMedia} />
               </LinearGradient>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionButtonCircle, styles.heartButton]}
               onPress={onSwipeRight}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={t("a11y.like")}
             >
               <LinearGradient
                 colors={[colors.primary, colors.primaryLight]}
                 style={styles.heartGradient}
               >
-                <MaterialIcons name="favorite" size={28} color="#FFFFFF" />
+                <MaterialIcons name="favorite" size={28} color={colors.onMedia} />
               </LinearGradient>
             </TouchableOpacity>
           </View>
 
           {/* Block & Report Section */}
           <View style={styles.safetySection}>
-            <TouchableOpacity style={styles.safetyButton}>
-              <Text style={styles.blockText}>Engelle</Text>
+            <TouchableOpacity
+              style={styles.safetyButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={t("safety.block")}
+            >
+              <Text style={styles.blockText}>{t("safety.block")}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.safetyButton}>
-              <Text style={styles.reportText}>Bildir</Text>
+            <TouchableOpacity
+              style={styles.safetyButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={t("safety.report")}
+            >
+              <Text style={styles.reportText}>{t("safety.report")}</Text>
             </TouchableOpacity>
           </View>
 
@@ -313,6 +382,18 @@ export function DiscoveryCard({ card, onSwipeLeft, onSwipeRight, onFavorite, fav
     </View>
   );
 }
+
+export const DiscoveryCard = React.memo(DiscoveryCardBase, (prev, next) => {
+  // Re-render only when the user being shown, visible counters, or
+  // active-in-stack state changes.
+  return (
+    prev.card.userId === next.card.userId &&
+    prev.favoritesRemaining === next.favoritesRemaining &&
+    prev.isPremium === next.isPremium &&
+    prev.isActive === next.isActive &&
+    prev.card.distanceKm === next.card.distanceKm
+  );
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -370,18 +451,34 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#FFFFFF",
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    color: colors.onMedia,
+    textShadowColor: colors.shadowStrong,
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
   age: {
     fontSize: 26,
     fontWeight: "400",
-    color: "rgba(255, 255, 255, 0.9)",
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    color: colors.onMediaSubtle,
+    textShadowColor: colors.shadowStrong,
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
+  },
+  newBadge: {
+    backgroundColor: colors.newBadge,
+    borderColor: colors.newBadgeBorder,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginLeft: 4,
+    alignSelf: "center",
+  },
+  newBadgeText: {
+    color: colors.onMedia,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.5,
   },
   locationRow: {
     flexDirection: "row",
@@ -390,9 +487,9 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 16,
-    color: colors.textSecondaryDark, // Might need to be lighter if on gradient
+    color: colors.onMediaSubtle, // White on dark gradient — much better contrast than gray
     fontWeight: "500",
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowColor: colors.shadowStrong,
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
@@ -412,16 +509,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sectionContent: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: colors.surfaceTint,
     padding: spacing.md,
     borderRadius: 20,
     gap: spacing.md,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: colors.surfaceTintBorder,
   },
   bio: {
     fontSize: 16,
-    color: "rgba(255, 255, 255, 0.9)",
+    color: colors.onMediaSubtle,
     lineHeight: 24,
   },
   readMoreButton: {
@@ -471,7 +568,8 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "rgba(108, 93, 211, 0.85)",
+    backgroundColor: colors.primary,
+    opacity: 0.85,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
@@ -496,7 +594,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   favoriteButtonText: {
-    color: "#FFFFFF",
+    color: colors.onMedia,
     fontSize: 14,
     fontWeight: "bold",
     letterSpacing: 0.5,
@@ -512,13 +610,13 @@ const styles = StyleSheet.create({
     top: 16,
     alignSelf: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    backgroundColor: colors.overlayLight,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
   },
   scrollIndicatorText: {
-    color: "rgba(255, 255, 255, 0.7)",
+    color: colors.onMediaMuted,
     fontSize: 11,
     fontWeight: "500",
   },
@@ -534,21 +632,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 4,
     borderWidth: 1,
-    borderColor: "#FFFFFF",
+    borderColor: colors.onMedia,
   },
   favoriteBadgeText: {
-    color: "#FFFFFF",
+    color: colors.onMedia,
     fontSize: 11,
     fontWeight: "bold",
   },
   // Bumble-style Location Card - Dark Theme
   locationCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: colors.surfaceTintStrong,
     borderRadius: 16,
     padding: spacing.md,
     marginTop: spacing.md,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: colors.surfaceTintBorder,
   },
   locationCardHeader: {
     fontSize: 14,
@@ -567,7 +665,7 @@ const styles = StyleSheet.create({
   locationCardCity: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: colors.onMedia,
   },
   locationCardDistance: {
     fontSize: 14,
@@ -596,9 +694,9 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   declineButton: {
-    backgroundColor: "rgba(255, 77, 109, 0.15)",
+    backgroundColor: colors.passRedSoft,
     borderWidth: 2,
-    borderColor: "rgba(255, 77, 109, 0.4)",
+    borderColor: colors.passRedBorder,
   },
   starButton: {
     overflow: "hidden",
@@ -638,6 +736,6 @@ const styles = StyleSheet.create({
   reportText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FF4D6D",
+    color: colors.passRed,
   },
 });

@@ -100,7 +100,7 @@ function CustomTabBar({ state, navigation, incomingRequestsCount, unreadMessages
                 <Ionicons
                   name={isFocused ? tab.icon as any : tab.outlineIcon as any}
                   size={22}
-                  color={isFocused ? '#FFFFFF' : 'rgba(255, 255, 255, 0.5)'}
+                  color={isFocused ? colors.onMedia : 'rgba(255, 255, 255, 0.5)'}
                 />
                 {tab.name === 'likes' && incomingRequestsCount > 0 && (
                   <View style={styles.badge}>
@@ -119,7 +119,7 @@ function CustomTabBar({ state, navigation, incomingRequestsCount, unreadMessages
               </View>
               <Text style={[
                 styles.label,
-                { color: isFocused ? '#FFFFFF' : 'rgba(255, 255, 255, 0.5)' }
+                { color: isFocused ? colors.onMedia : 'rgba(255, 255, 255, 0.5)' }
               ]}>
                 {tab.label}
               </Text>
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -6,
     right: -10,
-    backgroundColor: '#FF3B6B',
+    backgroundColor: colors.accentDark,
     minWidth: 16,
     height: 16,
     borderRadius: 8,
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   badgeText: {
-    color: '#FFFFFF',
+    color: colors.onMedia,
     fontSize: 9,
     fontWeight: 'bold',
   },

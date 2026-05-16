@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import { View, StyleSheet, TouchableOpacity, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { colors } from "@/src/theme/colors";
 import { spacing } from "@/src/theme/spacing";
 
@@ -12,12 +13,13 @@ type ActionButtonsProps = {
   disabled?: boolean;
 };
 
-export function ActionButtons({ 
-  onLike, 
-  onPass, 
+export function ActionButtons({
+  onLike,
+  onPass,
   onFavorite,
-  disabled = false 
+  disabled = false
 }: ActionButtonsProps) {
+  const { t } = useTranslation();
   const likeScale = useRef(new Animated.Value(1)).current;
   const passScale = useRef(new Animated.Value(1)).current;
   const favoriteScale = useRef(new Animated.Value(1)).current;
@@ -59,6 +61,9 @@ export function ActionButtons({
         onPress={handlePass}
         disabled={disabled}
         activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={t("a11y.pass")}
+        accessibilityState={{ disabled }}
       >
         <Animated.View
           style={[
@@ -77,6 +82,9 @@ export function ActionButtons({
           disabled={disabled}
           activeOpacity={0.8}
           style={styles.favoriteWrapper}
+          accessibilityRole="button"
+          accessibilityLabel={t("a11y.favorite")}
+          accessibilityState={{ disabled }}
         >
           <Animated.View
             style={[
@@ -84,7 +92,7 @@ export function ActionButtons({
               { transform: [{ scale: favoriteScale }] },
             ]}
           >
-            <MaterialIcons name="star" size={24} color="#60A5FA" />
+            <MaterialIcons name="star" size={24} color={colors.favoriteBlue} />
           </Animated.View>
         </TouchableOpacity>
       )}
@@ -94,6 +102,9 @@ export function ActionButtons({
         onPress={handleLike}
         disabled={disabled}
         activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={t("a11y.like")}
+        accessibilityState={{ disabled }}
       >
         <Animated.View
           style={[
@@ -107,7 +118,7 @@ export function ActionButtons({
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <MaterialIcons name="favorite" size={36} color="#FFFFFF" />
+            <MaterialIcons name="favorite" size={36} color={colors.onMedia} />
           </LinearGradient>
         </Animated.View>
       </TouchableOpacity>

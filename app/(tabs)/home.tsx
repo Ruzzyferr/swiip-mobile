@@ -67,7 +67,7 @@ export default function HomeScreen() {
     matchedUserName?: string;
   } | null>(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
-  const [filters, setFilters] = useState<FilterParams>({
+  const defaultFilters: FilterParams = {
     ageRange: [18, 60],
     gender: "ALL",
     distanceRange: [0, 100],
@@ -78,7 +78,28 @@ export default function HomeScreen() {
     verifiedOnly: false,
     recentlyActive: false,
     minPhotos: 0,
-  });
+  };
+  const [filters, setFilters] = useState<FilterParams>(defaultFilters);
+  const hasNonDefaultFilters = useMemo(
+    () =>
+      filters.ageRange[0] !== 18 ||
+      filters.ageRange[1] !== 60 ||
+      filters.gender !== "ALL" ||
+      filters.distanceRange[0] !== 0 ||
+      filters.distanceRange[1] !== 100 ||
+      filters.nativeLanguages.length > 0 ||
+      filters.targetLanguages.length > 0 ||
+      filters.countries.length > 0 ||
+      filters.purpose !== undefined ||
+      filters.verifiedOnly ||
+      filters.recentlyActive ||
+      filters.minPhotos > 0,
+    [filters],
+  );
+  const handleResetFilters = () => {
+    setFilters(defaultFilters);
+    loadFeed(false, defaultFilters);
+  };
   const [userLanguages, setUserLanguages] = useState<string[]>([]);
   const [isPremium, setIsPremium] = useState(false);
   const [showLikeLimitModal, setShowLikeLimitModal] = useState(false);
@@ -749,15 +770,34 @@ export default function HomeScreen() {
           </View>
           <Card style={styles.emptyCard}>
             <Text style={styles.emptyEmoji}>✨</Text>
-            <Text style={styles.emptyTitle}>{t('home.empty.title')}</Text>
+            <Text style={styles.emptyTitle}>
+              {hasNonDefaultFilters
+                ? t('home.empty.filtered_title')
+                : t('home.empty.title')}
+            </Text>
             <Text style={styles.emptyText}>
-              {t('home.empty.text')}
+              {hasNonDefaultFilters
+                ? t('home.empty.filtered_text')
+                : t('home.empty.text')}
             </Text>
             <PrimaryButton
               title={t('home.empty.refresh')}
               onPress={() => loadFeed()}
               style={styles.refreshButton}
             />
+            {hasNonDefaultFilters && (
+              <TouchableOpacity
+                onPress={handleResetFilters}
+                style={styles.resetFiltersLink}
+                accessibilityRole="button"
+                accessibilityLabel={t('home.empty.reset_filters')}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.resetFiltersText}>
+                  {t('home.empty.reset_filters')}
+                </Text>
+              </TouchableOpacity>
+            )}
           </Card>
         </View>
       </SafeAreaView>
@@ -833,9 +873,10 @@ export default function HomeScreen() {
                 </View>
               </View>
             )}
-            renderCard={(card) => (
+            renderCard={(card, isFirst) => (
               <DiscoveryCard
                 card={card}
+                isActive={isFirst}
                 onSwipeLeft={() => swipeDeckRef.current?.swipeLeft()}
                 onSwipeRight={() => swipeDeckRef.current?.swipeRight()}
                 onFavorite={() => handleFavorite(card)}
@@ -850,7 +891,7 @@ export default function HomeScreen() {
                 hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
                 <View style={styles.favoriteButtonOverlayInner}>
-                  <MaterialIcons name="star" size={24} color="#60A5FA" />
+                  <MaterialIcons name="star" size={24} color={colors.favoriteBlue} />
                 </View>
               </TouchableOpacity>
             )}
@@ -1237,6 +1278,17 @@ const styles = StyleSheet.create({
   refreshButton: {
     marginTop: spacing.sm,
   },
+  resetFiltersLink: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  resetFiltersText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.semibold,
+    textDecorationLine: "underline",
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: colors.overlay,
@@ -1385,7 +1437,7 @@ const styles = StyleSheet.create({
   favoriteModalButtonConfirmText: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
-    color: "#FFFFFF",
+    color: colors.onMedia,
   },
   successModalOverlay: {
     flex: 1,
@@ -1443,7 +1495,7 @@ const styles = StyleSheet.create({
   successModalButtonText: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
-    color: "#FFFFFF",
+    color: colors.onMedia,
   },
   directLimitModalOverlay: {
     flex: 1,
@@ -1516,7 +1568,7 @@ const styles = StyleSheet.create({
   directLimitModalButtonConfirmText: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
-    color: "#FFFFFF",
+    color: colors.onMedia,
   },
   boostModalTitle: {
     fontSize: typography.fontSize.lg,
@@ -1549,12 +1601,12 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   overlayLabelLeft: {
-    borderColor: colors.error || "#EF4444",
+    borderColor: colors.error,
   },
   overlayLabelText: {
     fontSize: typography.fontSize["2xl"],
     fontWeight: typography.fontWeight.bold,
-    color: "#FFFFFF",
+    color: colors.onMedia,
     letterSpacing: 2,
   },
   favoriteButtonOverlayInner: {

@@ -45,9 +45,9 @@ export function StatusModal({
     const getTitleColor = () => {
         switch (type) {
             case "success":
-                return colors.success || "#4ADE80";
+                return colors.success;
             case "error":
-                return colors.error || "#EF4444";
+                return colors.error;
             default:
                 return colors.text;
         }
@@ -80,7 +80,7 @@ export function StatusModal({
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        backgroundColor: colors.overlayStrong,
         justifyContent: "center",
         alignItems: "center",
         padding: spacing.lg,

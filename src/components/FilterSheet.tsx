@@ -392,7 +392,7 @@ export function FilterSheet({
                       setFilters((prev) => ({ ...prev, verifiedOnly: value }))
                     }
                     trackColor={{ false: colors.border, true: colors.primary }}
-                    thumbColor="#FFFFFF"
+                    thumbColor={colors.onMedia}
                   />
                 ) : (
                   <MaterialIcons name="lock" size={20} color={colors.textSecondary} />
@@ -421,7 +421,7 @@ export function FilterSheet({
                       setFilters((prev) => ({ ...prev, recentlyActive: value }))
                     }
                     trackColor={{ false: colors.border, true: colors.primary }}
-                    thumbColor="#FFFFFF"
+                    thumbColor={colors.onMedia}
                   />
                 ) : (
                   <MaterialIcons name="lock" size={20} color={colors.textSecondary} />
@@ -450,7 +450,7 @@ export function FilterSheet({
                       setFilters((prev) => ({ ...prev, minPhotos: value ? 2 : 0 }))
                     }
                     trackColor={{ false: colors.border, true: colors.primary }}
-                    thumbColor="#FFFFFF"
+                    thumbColor={colors.onMedia}
                   />
                 ) : (
                   <MaterialIcons name="lock" size={20} color={colors.textSecondary} />
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
     height: 24,
     width: 24,
     borderRadius: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.onMedia,
     borderWidth: 2,
     borderColor: colors.primary,
     shadowColor: "#000",
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   segmentedButtonTextActive: {
-    color: "#FFFFFF",
+    color: colors.onMedia,
   },
   chipContainer: {
     flexDirection: "row",

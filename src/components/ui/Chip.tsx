@@ -8,22 +8,35 @@ type ChipProps = {
   label: string;
   variant?: "default" | "primary" | "outlined";
   onPress?: () => void;
-  icon?: string; // Emoji or icon
+  // Accepts a string (legacy emoji/text) or any React node (e.g. <LanguageFlag />)
+  icon?: React.ReactNode;
 };
 
 export function Chip({ label, variant = "default", onPress, icon }: ChipProps) {
-  const Component = onPress ? TouchableOpacity : View;
+  const isPressable = !!onPress;
+  const Container: React.ComponentType<any> = isPressable ? TouchableOpacity : View;
+
+  const renderIcon = () => {
+    if (icon === null || icon === undefined || icon === "") return null;
+    if (typeof icon === "string" || typeof icon === "number") {
+      return <Text style={styles.icon}>{icon}</Text>;
+    }
+    return <View style={styles.iconWrap}>{icon}</View>;
+  };
 
   return (
-    <Component
+    <Container
       onPress={onPress}
+      accessibilityRole={isPressable ? "button" : undefined}
+      accessibilityLabel={isPressable ? label : undefined}
+      hitSlop={isPressable ? { top: 6, bottom: 6, left: 6, right: 6 } : undefined}
       style={[
         styles.chip,
         variant === "primary" && styles.chipPrimary,
         variant === "outlined" && styles.chipOutlined,
       ]}
     >
-      {icon && <Text style={styles.icon}>{icon}</Text>}
+      {renderIcon()}
       <Text
         style={[
           styles.text,
@@ -33,7 +46,7 @@ export function Chip({ label, variant = "default", onPress, icon }: ChipProps) {
       >
         {label}
       </Text>
-    </Component>
+    </Container>
   );
 }
 
@@ -49,8 +62,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   chipPrimary: {
-    backgroundColor: "#F3E8FF", // Purple tint for native languages
-    borderColor: "#E9D5FF",
+    backgroundColor: colors.primaryTint,
+    borderColor: colors.primaryTintBorder,
   },
   chipOutlined: {
     backgroundColor: "transparent",
@@ -62,7 +75,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   textPrimary: {
-    color: "#7C3AED", // Purple text for primary chips
+    color: colors.primaryTintText,
   },
   textOutlined: {
     color: colors.textSecondary,
@@ -71,5 +84,9 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     marginRight: spacing.xs / 2,
   },
+  iconWrap: {
+    marginRight: spacing.xs / 2,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });
-

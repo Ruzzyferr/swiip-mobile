@@ -6,13 +6,13 @@ import {
   FlatList,
   RefreshControl,
   TouchableOpacity,
-  Image,
   Alert,
   Modal,
   ScrollView,
   Animated,
   Dimensions,
 } from "react-native";
+import { OptimizedImage } from "@/src/components/ui/OptimizedImage";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { LinearGradient } from "expo-linear-gradient";
@@ -109,7 +109,7 @@ const ExpirationTimer = ({ expiresAt }: { expiresAt: string }) => {
       <Ionicons
         name="time-outline"
         size={12}
-        color={isUrgent ? "#FF4D6D" : colors.textSecondaryDark}
+        color={isUrgent ? colors.passRed : colors.textSecondaryDark}
       />
       <Text style={[styles.expirationText, isUrgent && styles.expirationTextUrgent]}>
         {timeLeft}
@@ -403,14 +403,19 @@ export default function RequestsScreen() {
             style={styles.requestContent}
             onPress={() => handleProfilePress(item)}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={t("a11y.open_profile")}
           >
             <View style={styles.userInfo}>
               <View style={styles.avatarContainer}>
                 {user.photos && user.photos.length > 0 ? (
-                  <Image
+                  <OptimizedImage
                     source={{ uri: user.photos[0] }}
                     style={styles.avatar}
+                    containerStyle={styles.avatar}
                     resizeMode="cover"
+                    fallbackIconSize={32}
+                    showLoader={false}
                   />
                 ) : (
                   <View style={styles.avatarPlaceholder}>
@@ -421,7 +426,7 @@ export default function RequestsScreen() {
                 )}
                 {item.kind === "FAVORITE" && (
                   <View style={styles.favoriteBadge}>
-                    <Ionicons name="star" size={12} color="#FFFFFF" />
+                    <Ionicons name="star" size={12} color={colors.onMedia} />
                   </View>
                 )}
               </View>
@@ -501,9 +506,11 @@ export default function RequestsScreen() {
               style={styles.actionButtonContainer}
               onPress={() => handleDecline(item.fromUserId!)}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('likes.decline')}
             >
               <View style={[styles.actionButton, styles.declineButton]}>
-                <Ionicons name="close" size={24} color="#FF4D6D" />
+                <Ionicons name="close" size={24} color={colors.passRed} />
                 <Text style={styles.declineButtonText}>{t('likes.decline')}</Text>
               </View>
             </TouchableOpacity>
@@ -517,6 +524,8 @@ export default function RequestsScreen() {
                 item.kind
               )}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('likes.accept')}
             >
               <LinearGradient
                 colors={[colors.primary, colors.primaryLight]}
@@ -524,7 +533,7 @@ export default function RequestsScreen() {
                 end={{ x: 1, y: 0 }}
                 style={[styles.actionButton, styles.acceptButton]}
               >
-                <Ionicons name="checkmark" size={24} color="#FFFFFF" />
+                <Ionicons name="checkmark" size={24} color={colors.onMedia} />
                 <Text style={styles.acceptButtonText}>{t('likes.accept')}</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -622,10 +631,12 @@ export default function RequestsScreen() {
                   {/* Profile Photo */}
                   {matchData?.matchedUserPhoto ? (
                     <View style={styles.matchPhotoContainer}>
-                      <Image
+                      <OptimizedImage
                         source={{ uri: matchData.matchedUserPhoto }}
                         style={styles.matchPhoto}
+                        containerStyle={styles.matchPhoto}
                         resizeMode="cover"
+                        fallbackIconSize={48}
                       />
                       <View style={styles.matchPhotoRing} />
                     </View>
@@ -732,11 +743,13 @@ export default function RequestsScreen() {
                   >
                     {profileData.photos && profileData.photos.length > 0 ? (
                       profileData.photos.map((photo, index) => (
-                        <Image
+                        <OptimizedImage
                           key={index}
                           source={{ uri: photo }}
                           style={styles.carouselPhoto}
+                          containerStyle={styles.carouselPhoto}
                           resizeMode="cover"
+                          fallbackIconSize={64}
                         />
                       ))
                     ) : (
@@ -763,7 +776,7 @@ export default function RequestsScreen() {
                       setSelectedRequest(null);
                     }}
                   >
-                    <Ionicons name="close" size={28} color="#FFFFFF" />
+                    <Ionicons name="close" size={28} color={colors.onMedia} />
                   </TouchableOpacity>
 
                   {/* Pagination Dots */}
@@ -867,7 +880,7 @@ export default function RequestsScreen() {
                     handleDecline(selectedRequest?.fromUserId!);
                   }}
                 >
-                  <Ionicons name="close" size={32} color="#FF4D6D" />
+                  <Ionicons name="close" size={32} color={colors.passRed} />
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -888,7 +901,7 @@ export default function RequestsScreen() {
                     colors={[colors.primary, colors.primaryLight]}
                     style={styles.acceptFabGradient}
                   >
-                    <Ionicons name="heart" size={32} color="#FFFFFF" />
+                    <Ionicons name="heart" size={32} color={colors.onMedia} />
                   </LinearGradient>
                 </TouchableOpacity>
               </LinearGradient>
@@ -972,7 +985,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: colors.onMedia,
   },
   favoriteBadge: {
     position: "absolute",
@@ -1000,7 +1013,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: colors.onMedia,
     letterSpacing: 0.5,
   },
   superLikeTag: {
@@ -1011,7 +1024,7 @@ const styles = StyleSheet.create({
   superLikeText: {
     fontSize: 10,
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: colors.onMedia,
   },
   locationContainer: {
     flexDirection: "row",
@@ -1079,7 +1092,7 @@ const styles = StyleSheet.create({
   declineButtonText: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#FF4D6D",
+    color: colors.passRed,
   },
   acceptButton: {
     // Gradient handled in component
@@ -1087,7 +1100,7 @@ const styles = StyleSheet.create({
   acceptButtonText: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: colors.onMedia,
   },
   /* Profile Modal Styles */
   profileLoadingContainer: {
@@ -1160,7 +1173,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   activeDot: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.onMedia,
   },
   headerInfoOverlay: {
     position: "absolute",
@@ -1171,7 +1184,7 @@ const styles = StyleSheet.create({
   headerName: {
     fontSize: 32,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: colors.onMedia,
     textShadowColor: "rgba(0, 0, 0, 0.5)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
@@ -1274,7 +1287,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   favoriteText: {
-    color: "#FFFFFF",
+    color: colors.onMedia,
     fontSize: 16,
     fontStyle: "italic",
     lineHeight: 22,
@@ -1304,7 +1317,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   declineFab: {
-    backgroundColor: "#2A2A35",
+    backgroundColor: colors.surfaceDark,
     borderWidth: 1,
     borderColor: "rgba(255, 77, 109, 0.3)",
   },
@@ -1386,7 +1399,7 @@ const styles = StyleSheet.create({
   matchTitle: {
     fontSize: typography.fontSize["4xl"],
     fontWeight: typography.fontWeight.bold,
-    color: "#FFFFFF",
+    color: colors.onMedia,
     textAlign: "center",
     marginBottom: spacing.lg,
     textShadowColor: "rgba(0, 0, 0, 0.3)",
@@ -1407,17 +1420,17 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     borderWidth: 4,
-    borderColor: "#FFFFFF",
+    borderColor: colors.onMedia,
   },
   matchPhotoPlaceholder: {
     backgroundColor: "rgba(255, 255, 255, 0.3)",
     borderWidth: 4,
-    borderColor: "#FFFFFF",
+    borderColor: colors.onMedia,
   },
   matchPhotoPlaceholderText: {
     fontSize: typography.fontSize["4xl"],
     fontWeight: typography.fontWeight.bold,
-    color: "#FFFFFF",
+    color: colors.onMedia,
   },
   matchPhotoRing: {
     position: "absolute",
@@ -1432,7 +1445,7 @@ const styles = StyleSheet.create({
   matchName: {
     fontSize: typography.fontSize["2xl"],
     fontWeight: typography.fontWeight.bold,
-    color: "#FFFFFF",
+    color: colors.onMedia,
     textAlign: "center",
     marginBottom: spacing.xs,
     textShadowColor: "rgba(0, 0, 0, 0.3)",
@@ -1457,7 +1470,7 @@ const styles = StyleSheet.create({
   },
   firstMessageText: {
     fontSize: typography.fontSize.sm,
-    color: "#FFFFFF",
+    color: colors.onMedia,
     textAlign: "center",
     fontWeight: typography.fontWeight.medium,
   },
@@ -1520,6 +1533,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   expirationTextUrgent: {
-    color: "#FF4D6D",
+    color: colors.passRed,
   },
 });

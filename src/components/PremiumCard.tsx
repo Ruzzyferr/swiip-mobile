@@ -36,7 +36,7 @@ export function PremiumCard({
     >
       {/* Glowing circle in top right */}
       <LinearGradient
-        colors={["#762AB4", "#C75FE4"]}
+        colors={[colors.premiumGradientStart, colors.premiumGradientEnd]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.glowCircle}
@@ -73,13 +73,13 @@ export function PremiumCard({
           activeOpacity={0.8}
         >
           <LinearGradient
-            colors={["rgba(16, 5, 36, 1)", "rgba(16, 5, 36, 0.26)", "transparent"]}
+            colors={[colors.premiumDeepBackdrop, colors.premiumDeepBackdropFade, "transparent"]}
             start={{ x: 0, y: 0.45 }}
             end={{ x: 1, y: 0.45 }}
             style={styles.buttonOverlayLeft}
           />
           <LinearGradient
-            colors={["transparent", "rgba(16, 5, 36, 0.26)", "rgba(16, 5, 36, 1)"]}
+            colors={["transparent", colors.premiumDeepBackdropFade, colors.premiumDeepBackdrop]}
             start={{ x: 0, y: 0.45 }}
             end={{ x: 1, y: 0.45 }}
             style={styles.buttonOverlayRight}
@@ -91,8 +91,8 @@ export function PremiumCard({
   );
 }
 
-const CARD_BG = "#7A308F"; // rgb(122, 48, 143)
-const GLOW_COLOR = "#C75FE4"; // rgb(199, 95, 228)
+const CARD_BG = colors.premiumGradientStart;
+const GLOW_COLOR = colors.premiumGradientEnd;
 const FEATURE_CHECK_COLOR = GLOW_COLOR;
 
 const styles = StyleSheet.create({
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.fontSize.base, // 1rem
-    color: "#FFFFFF",
+    color: colors.onMedia,
     fontWeight: typography.fontWeight.semibold, // 600
   },
   pricingContainer: {
@@ -147,17 +147,17 @@ const styles = StyleSheet.create({
   },
   pricing: {
     fontSize: typography.fontSize["2xl"], // 1.5rem
-    color: "#FFFFFF",
+    color: colors.onMedia,
     fontWeight: typography.fontWeight.semibold, // 600
   },
   pricingTime: {
     fontSize: typography.fontSize.xs, // 0.75rem
-    color: "#B884C7", // rgb(184, 132, 199)
+    color: colors.premiumMutedText,
     fontWeight: typography.fontWeight.medium, // 500
   },
   subtitle: {
     fontSize: typography.fontSize.xs, // 0.75rem
-    color: "#B884C7", // rgb(184, 132, 199)
+    color: colors.premiumMutedText,
     fontWeight: typography.fontWeight.medium, // 500
     marginTop: spacing.xs,
   },
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: typography.fontSize.xs, // 0.75rem
-    color: "#FFFFFF",
+    color: colors.onMedia,
     fontWeight: typography.fontWeight.medium, // 500
     flex: 1,
   },
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     position: "relative",
     zIndex: 10,
     fontSize: typography.fontSize.xs, // 0.75rem
-    color: "#FFFFFF",
+    color: colors.onMedia,
     fontWeight: typography.fontWeight.medium,
     textAlign: "center",
   },
